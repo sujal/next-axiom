@@ -48,7 +48,7 @@ export function withAxiomNextConfig(nextConfig: NextConfig): NextConfig {
   };
 }
 
-export type AxiomRequest = NextRequest & { log: Logger, correlationId: string };
+export type AxiomRequest = NextRequest & { log: Logger, correlationId?: string };
 type NextHandler<T = any> = (
   req: AxiomRequest,
   arg?: T

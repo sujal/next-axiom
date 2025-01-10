@@ -163,12 +163,9 @@ export async function requestToJSON(request: Request | NextRequest): Promise<Req
   };
 }
 
-export const correlationIdForRequest = (req: Request | NextRequest): string => {
+export const correlationIdForRequest = (req: Request | NextRequest): string | undefined => {
   let correlationId = req.headers.get('x-correlation-id');
-  if (!correlationId) {
-    correlationId = Math.random().toString(36).substring(2);
-  }
-  return correlationId;
+  return correlationId || undefined;
 }
 
 export const throttle = (fn: Function, wait: number) => {
