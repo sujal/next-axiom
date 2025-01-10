@@ -44,6 +44,7 @@ export interface RequestReport {
   userAgent?: string | null;
   durationMs?: number;
   details?: RequestJSON;
+  correlationId?: string;
 }
 
 export interface PlatformInfo {

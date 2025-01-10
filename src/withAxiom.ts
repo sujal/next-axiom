@@ -3,7 +3,7 @@ import { Rewrite } from 'next/dist/lib/load-custom-routes';
 import { config, isEdgeRuntime, isVercelIntegration } from './config';
 import { LogLevel, Logger, RequestReport } from './logger';
 import { type NextRequest, type NextResponse } from 'next/server';
-import { EndpointType, RequestJSON, requestToJSON } from './shared';
+import { EndpointType, RequestJSON, requestToJSON, correlationIdForRequest } from './shared';
 
 export function withAxiomNextConfig(nextConfig: NextConfig): NextConfig {
   return {
@@ -48,7 +48,7 @@ export function withAxiomNextConfig(nextConfig: NextConfig): NextConfig {
   };
 }
 
-export type AxiomRequest = NextRequest & { log: Logger };
+export type AxiomRequest = NextRequest & { log: Logger, correlationId: string };
 type NextHandler<T = any> = (
   req: AxiomRequest,
   arg?: T
@@ -80,6 +80,8 @@ export function withAxiomRouteHandler(handler: NextHandler, config?: AxiomRouteH
       Array.isArray(config?.logRequestDetails) || config?.logRequestDetails === true
         ? await requestToJSON(req)
         : undefined;
+    
+    const correlationId = correlationIdForRequest(req);
 
     const report: RequestReport = {
       startTime: new Date().getTime(),
@@ -90,6 +92,7 @@ export function withAxiomRouteHandler(handler: NextHandler, config?: AxiomRouteH
       userAgent: req.headers.get('user-agent'),
       scheme: req.url.split('://')[0],
       ip: req.headers.get('x-forwarded-for'),
+      correlationId,
       region,
       details: Array.isArray(config?.logRequestDetails)
         ? (Object.fromEntries(
@@ -103,11 +106,12 @@ export function withAxiomRouteHandler(handler: NextHandler, config?: AxiomRouteH
     // main logger, mainly used to log reporting on the incoming HTTP request
     const logger = new Logger({ req: report, source: isEdgeRuntime ? 'edge' : 'lambda' });
     // child logger to be used by the users within the handler
-    const log = logger.with({});
+    const log = logger.with({ correlationId });
     log.config.source = `${isEdgeRuntime ? 'edge' : 'lambda'}${!isVercelIntegration ? '-log' : ''}`;
     const axiomContext = req as AxiomRequest;
     const args = arg;
     axiomContext.log = log;
+    axiomContext.correlationId = correlationId;
 
     try {
       const result = await handler(axiomContext, args);
