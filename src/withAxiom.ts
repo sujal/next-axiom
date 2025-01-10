@@ -106,7 +106,7 @@ export function withAxiomRouteHandler(handler: NextHandler, config?: AxiomRouteH
     // main logger, mainly used to log reporting on the incoming HTTP request
     const logger = new Logger({ req: report, source: isEdgeRuntime ? 'edge' : 'lambda', args: { correlationId } });
     // child logger to be used by the users within the handler
-    const log = logger.with({ });
+    const log = logger.with({ correlationId });
     log.config.source = `${isEdgeRuntime ? 'edge' : 'lambda'}${!isVercelIntegration ? '-log' : ''}`;
     const axiomContext = req as AxiomRequest;
     const args = arg;
